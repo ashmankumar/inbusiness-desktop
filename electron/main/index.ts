@@ -1,0 +1,205 @@
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+import os from 'node:os'
+import { update } from './update'
+import {spawn} from "child_process";
+
+const require = createRequire(import.meta.url)
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// The built directory structure
+//
+// ├─┬ dist-electron
+// │ ├─┬ main
+// │ │ └── index.js    > Electron-Main
+// │ └─┬ preload
+// │   └── index.mjs   > Preload-Scripts
+// ├─┬ dist
+// │ └── index.html    > Electron-Renderer
+//
+process.env.APP_ROOT = path.join(__dirname, '../..')
+
+export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
+export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
+export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL
+
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
+  ? path.join(process.env.APP_ROOT, 'public')
+  : RENDERER_DIST
+
+// Disable GPU Acceleration for Windows 7
+if (os.release().startsWith('6.1')) app.disableHardwareAcceleration()
+
+// Set application name for Windows 10+ notifications
+if (process.platform === 'win32') app.setAppUserModelId(app.getName())
+
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+  process.exit(0)
+}
+
+let win: BrowserWindow | null = null
+const preload = path.join(__dirname, '../preload/index.mjs')
+const indexHtml = path.join(RENDERER_DIST, 'index.html')
+
+async function createWindow() {
+  win = new BrowserWindow({
+    title: 'Main window',
+    icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
+    webPreferences: {
+      preload,
+      // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
+      // nodeIntegration: true,
+
+      // Consider using contextBridge.exposeInMainWorld
+      // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
+      // contextIsolation: false,
+    },
+  })
+
+  if (VITE_DEV_SERVER_URL) { // #298
+    win.loadURL(VITE_DEV_SERVER_URL)
+    // Open devTool if the app is not packaged
+    win.webContents.openDevTools()
+  } else {
+    win.loadFile(indexHtml)
+  }
+
+  // Test actively push message to the Electron-Renderer
+  win.webContents.on('did-finish-load', () => {
+    win?.webContents.send('main-process-message', new Date().toLocaleString())
+  })
+
+  // Make all links open with the browser, not with the application
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https:')) shell.openExternal(url)
+    return { action: 'deny' }
+  })
+
+  // Auto update
+  update(win)
+}
+
+app.whenReady().then(createWindow)
+
+app.on('window-all-closed', () => {
+  win = null
+  if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('second-instance', () => {
+  if (win) {
+    // Focus on the main window if the user tried to open another
+    if (win.isMinimized()) win.restore()
+    win.focus()
+  }
+})
+
+app.on('activate', () => {
+  const allWindows = BrowserWindow.getAllWindows()
+  if (allWindows.length) {
+    allWindows[0].focus()
+  } else {
+    createWindow()
+  }
+})
+
+// New window example arg: new windows url
+ipcMain.handle('open-win', (_, arg) => {
+  const childWindow = new BrowserWindow({
+    webPreferences: {
+      preload,
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  })
+
+  if (VITE_DEV_SERVER_URL) {
+    childWindow.loadURL(`${VITE_DEV_SERVER_URL}#${arg}`)
+  } else {
+    childWindow.loadFile(indexHtml, { hash: arg })
+  }
+})
+
+
+let pythonProcess;
+const pythonExecutable = '/Users/AshmanLocal/dev/inbusiness/backend/dist/ScreenRecorder/ScreenRecorder';
+
+ipcMain.on('start-recording', (event, taskTitle) => {
+  try {
+    console.log(`Starting recording in background for task: ${taskTitle}`);
+
+    // Path to your Python executable (adjust this path as needed)
+    //const pythonExecutable = path.join(__dirname, 'dist', 'ScreenRecorderModel', 'ScreenRecorderModel');
+
+    // Start the Python process
+    pythonProcess = spawn(pythonExecutable, ['--start'], {
+      stdio: 'pipe', // Inherit stdio to see output in the console, or 'ignore' if not needed
+    });
+
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+      console.log(`Python process exited with code ${code}`);
+    });
+
+    event.sender.send('recording-started', { success: true });
+  } catch (error) {
+    event.sender.send('recording-started', { success: false, error: error.message });
+  }
+});
+
+ipcMain.on('stop-recording', (event) => {
+  try {
+    console.log(`Stopping recording`);
+
+    if (pythonProcess) {
+      // Send a stop signal to the Python process
+      pythonProcess.kill('SIGINT'); // Or use another signal if appropriate
+      pythonProcess = null;
+      event.sender.send('recording-stopped', { success: true });
+    } else {
+      event.sender.send('recording-stopped', { success: false, error: "Python process not running" });
+    }
+  } catch (error) {
+    event.sender.send('recording-stopped', { success: false, error: error.message });
+  }
+});
+
+ipcMain.on('analyse-recording', (event, taskTitle) => {
+  try {
+    console.log(`Analyzing recording for task: ${taskTitle}`);
+
+    // Pass the taskTitle as a command-line argument to the Python process
+    pythonProcess = spawn(pythonExecutable, ['--analyse', '--task_description', taskTitle], {
+      stdio: 'pipe',
+    });
+
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+      event.sender.send('analyse-recording-data', { success: true, data: data.toString() });
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
+      event.sender.send('analyse-recording-error', { success: false, error: data.toString() });
+    });
+
+    pythonProcess.on('close', (code) => {
+      console.log(`Python process exited with code ${code}`);
+      event.sender.send('analyse-recording-complete', { code });
+    });
+
+    event.sender.send('analyse-recording', { success: true });
+  } catch (error) {
+    event.sender.send('analyse-recording', { success: false, error: error.message });
+  }
+});
