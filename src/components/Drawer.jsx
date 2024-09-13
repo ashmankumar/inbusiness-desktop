@@ -92,12 +92,12 @@ const MainDrawer = ({ open }) => {
                                     minHeight: 48,
                                     justifyContent: open ? "initial" : "center",
                                     px: 2.5,
-                                    color: "#ffffff",
+                                    color: "#090808",
                                     "&.Mui-selected": {
-                                        backgroundColor: "#ffffff",
+                                        backgroundColor: "#e6e4e4",
                                         color: "black",
                                         ":hover": {
-                                            backgroundColor: "#fbf9f9",
+                                            backgroundColor: "#918484",
                                             color: "black",
                                         },
                                     },
@@ -114,7 +114,7 @@ const MainDrawer = ({ open }) => {
                                         minWidth: 0,
                                         mr: open ? 3 : "auto",
                                         justifyContent: "center",
-                                        color: current === item.link ? "#000" : "#FFF",
+                                        color: current === item.link ? "#0e0e0e" : "#807c7c",
                                     }}
                                 >
                                     {item.icon}

@@ -15,7 +15,7 @@ export default function Header({ open, toggleNavigationDrawer }) {
                 <Toolbar>
                     <IconButton
                         size="large"
-                        color="inherit"
+                        color="#000"
                         aria-label="open drawer"
                         sx={{ marginLeft: open ? '240px' : 5 }}
                         onClick={toggleNavigationDrawer}

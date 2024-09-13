@@ -75,7 +75,7 @@ function VideoAnalysisRecordingPage() {
                 borderColor="grey.500"
                 borderRadius={2}
                 padding={2}
-                width="100%"
+                width="500px"
                 maxWidth="500px"
                 margin="0 auto"
                 boxShadow={3}
