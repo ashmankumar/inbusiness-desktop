@@ -125,14 +125,16 @@ ipcMain.handle('open-win', (_, arg) => {
 
 
 let pythonProcess;
-const pythonExecutable = '/Users/AshmanLocal/dev/inbusiness/backend/dist/ScreenRecorder/ScreenRecorder';
+// Dynamically get the root path of the Electron app
+const appRootPath = app.getAppPath();
+
+// Define the path to the Python executable as a constant
+const pythonExecutable = path.join(appRootPath, 'backend-services', 'ScreenRecorder');
+console.log(`Python executable path: ${pythonExecutable}`);
 
 ipcMain.on('start-recording', (event, taskTitle) => {
   try {
     console.log(`Starting recording in background for task: ${taskTitle}`);
-
-    // Path to your Python executable (adjust this path as needed)
-    //const pythonExecutable = path.join(__dirname, 'dist', 'ScreenRecorderModel', 'ScreenRecorderModel');
 
     // Start the Python process
     pythonProcess = spawn(pythonExecutable, ['--start'], {
