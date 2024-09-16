@@ -208,3 +208,4 @@ ipcMain.on('analyse-recording', (event, taskTitle) => {
     event.sender.send('analyse-recording', { success: false, error: errorMessage });
   }
 });
+
