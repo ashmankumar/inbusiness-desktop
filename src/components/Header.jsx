@@ -7,10 +7,9 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 export default function Header({ open, toggleNavigationDrawer }) {
 
-
     return (
-        <Box sx={{ flexGrow: 1 }}>
-            <AppBar position="fixed">
+        <Box sx={{ flexGrow: 1}}>
+            <AppBar position="fixed" color="primary">
                 <Toolbar>
                     <IconButton
                         size="large"
