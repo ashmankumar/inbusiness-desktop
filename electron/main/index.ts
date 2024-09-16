@@ -155,7 +155,8 @@ ipcMain.on('start-recording', (event, taskTitle) => {
 
     event.sender.send('recording-started', { success: true });
   } catch (error) {
-    event.sender.send('recording-started', { success: false, error: error.message });
+    const errorMessage = (error as Error).message || 'Unknown error';
+    event.sender.send('recording-started', { success: false, error: errorMessage });
   }
 });
 
@@ -172,7 +173,8 @@ ipcMain.on('stop-recording', (event) => {
       event.sender.send('recording-stopped', { success: false, error: "Python process not running" });
     }
   } catch (error) {
-    event.sender.send('recording-stopped', { success: false, error: error.message });
+    const errorMessage = (error as Error).message || 'Unknown error';
+    event.sender.send('recording-stopped', { success: false, error: errorMessage });
   }
 });
 
@@ -202,6 +204,7 @@ ipcMain.on('analyse-recording', (event, taskTitle) => {
 
     event.sender.send('analyse-recording', { success: true });
   } catch (error) {
-    event.sender.send('analyse-recording', { success: false, error: error.message });
+    const errorMessage = (error as Error).message || 'Unknown error';
+    event.sender.send('analyse-recording', { success: false, error: errorMessage });
   }
 });
