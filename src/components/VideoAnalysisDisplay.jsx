@@ -12,15 +12,18 @@ function VideoAnalysisDisplay({ data }) {
                     </AccordionSummary>
                     <AccordionDetails>
                         <Typography paragraph>{action.description}</Typography>
+                        <Typography variant="h7" >Steps:</Typography>
                         <List>
                             {action.tasks.map((task) => (
                                 <React.Fragment key={task.task_id}>
                                     <ListItem>
-                                        <ListItemText primary={task.task} secondary={task.subtasks.join(', ')} />
+                                        <ListItemText
+                                            primary={<Typography variant="h8">{`${task.task_id}. ${task.task}`}</Typography>}
+                                        />
                                     </ListItem>
                                     {task.subtasks.map((subtask, index) => (
                                         <ListItem key={index} style={{ paddingLeft: '20px' }}>
-                                            <ListItemText primary={`- ${subtask}`} />
+                                            <ListItemText primary={`- ${subtask.description}`} />
                                         </ListItem>
                                     ))}
                                 </React.Fragment>
