@@ -130,7 +130,9 @@ const appRootPath = app.getAppPath();
 
 // Define the path to the Python executable as a constant
 const pythonExecutable = path.join(appRootPath, 'backend-services', 'ScreenRecorder');
+const pythonWorkingDir = path.dirname(pythonExecutable);  // Set the working directory to the location of the executable
 console.log(`Python executable path: ${pythonExecutable}`);
+console.log(`Python working directory: ${pythonWorkingDir}`);
 
 ipcMain.on('start-recording', (event, taskTitle) => {
   try {
@@ -138,6 +140,7 @@ ipcMain.on('start-recording', (event, taskTitle) => {
 
     // Start the Python process
     pythonProcess = spawn(pythonExecutable, ['--start'], {
+      cwd: pythonWorkingDir,  // Set the current working directory to the executable's directory
       stdio: 'pipe', // Inherit stdio to see output in the console, or 'ignore' if not needed
     });
 
@@ -184,6 +187,7 @@ ipcMain.on('analyse-recording', (event, taskTitle) => {
 
     // Pass the taskTitle as a command-line argument to the Python process
     pythonProcess = spawn(pythonExecutable, ['--analyse', '--task_description', taskTitle], {
+      cwd: pythonWorkingDir,
       stdio: 'pipe',
     });
 
